@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Crown Copyright
+ * Copyright 2020-2021 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,10 +48,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static uk.gov.gchq.gaffer.store.StoreTrait.INGEST_AGGREGATION;
@@ -89,6 +89,25 @@ public class GraphConfigurationControllerTest {
     }
 
     @Test
+    public void shouldReturnGraphId() {
+        // Given
+        when(graphFactory.getGraph()).thenReturn(new Graph.Builder()
+                .config(new GraphConfig("id"))
+                .addSchema(new Schema())
+                .storeProperties(new MapStoreProperties())
+                .description("test graph")
+                .build());
+
+        // When
+        GraphConfigurationController controller = new GraphConfigurationController(graphFactory);
+
+        final String graphId = controller.getGraphId();
+
+        // Then
+        assertEquals("id", graphId);
+    }
+
+    @Test
     public void shouldGetFilterFunctions() {
         // Given
         GraphConfigurationController controller = new GraphConfigurationController(graphFactory);
@@ -97,7 +116,7 @@ public class GraphConfigurationControllerTest {
         final Set<Class> classes =  controller.getFilterFunctions();
 
         // Then
-        assertTrue(classes.contains(IsA.class));
+        assertThat(classes).contains(IsA.class);
     }
 
     @Test
@@ -109,7 +128,7 @@ public class GraphConfigurationControllerTest {
         final Set<Class> classes =  controller.getFilterFunctions(null);
 
         // Then
-        assertTrue(classes.contains(IsA.class));
+        assertThat(classes).contains(IsA.class);
     }
 
     @Test
@@ -121,9 +140,7 @@ public class GraphConfigurationControllerTest {
         final Set<Class> classes = controller.getFilterFunctions(Long.class.getName());
 
         // Then
-        assertTrue(classes.contains(IsLessThan.class));
-        assertTrue(classes.contains(IsMoreThan.class));
-        assertTrue(classes.contains(Not.class));
+        assertThat(classes).contains(IsLessThan.class, IsMoreThan.class, Not.class);
     }
 
     @Test
@@ -135,9 +152,7 @@ public class GraphConfigurationControllerTest {
         final Set<Class> classes = controller.getFilterFunctions("Long");
 
         // Then
-        assertTrue(classes.contains(IsLessThan.class));
-        assertTrue(classes.contains(IsMoreThan.class));
-        assertTrue(classes.contains(Not.class));
+        assertThat(classes).contains(IsLessThan.class, IsMoreThan.class, Not.class);
     }
 
     @Test
@@ -145,12 +160,10 @@ public class GraphConfigurationControllerTest {
         // Given
         GraphConfigurationController controller = new GraphConfigurationController(graphFactory);
 
-        // When
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> controller.getFilterFunctions("random class"));
-
-        // Then
-        assertEquals("Could not find input class: random class", exception.getMessage());
+        // When / Then
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> controller.getFilterFunctions("random class"))
+                .withMessage("Could not find input class: random class");
     }
 
     @Test
@@ -162,8 +175,8 @@ public class GraphConfigurationControllerTest {
         final Set<String> fields = controller.getSerialisedFields(IsA.class.getName());
 
         // Then
-        assertEquals(1, fields.size());
-        assertTrue(fields.contains("type"));
+        assertThat(fields).hasSize(1)
+                .contains("type");
     }
 
     @Test
@@ -234,11 +247,10 @@ public class GraphConfigurationControllerTest {
         // Given
         GraphConfigurationController controller = new GraphConfigurationController(graphFactory);
 
-        // When
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> controller.getSerialisedFields("unknown className"));
-
-        // Then
-        assertEquals("Class name was not recognised: unknown className", exception.getMessage());
+        // When / Then
+         assertThatIllegalArgumentException()
+                 .isThrownBy(() -> controller.getSerialisedFields("unknown className"))
+                 .withMessage("Class name was not recognised: unknown className");
     }
 
     @Test

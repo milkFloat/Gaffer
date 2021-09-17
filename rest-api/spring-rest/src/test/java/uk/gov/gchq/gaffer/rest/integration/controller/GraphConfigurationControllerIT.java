@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Crown Copyright
+ * Copyright 2020-2021 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import uk.gov.gchq.gaffer.store.schema.Schema;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 public class GraphConfigurationControllerIT extends AbstractRestApiIT {
@@ -70,7 +70,7 @@ public class GraphConfigurationControllerIT extends AbstractRestApiIT {
 
         // Then
         checkResponse(response, 200);
-        assertEquals(new Schema(), response.getBody());
+        assertThat(response.getBody()).isEqualTo(new Schema());
     }
 
     @Test
@@ -92,7 +92,7 @@ public class GraphConfigurationControllerIT extends AbstractRestApiIT {
 
         // Then
         checkResponse(response, 200);
-        assertEquals("test description", response.getBody());
+        assertThat(response.getBody()).isEqualTo("test description");
     }
 
     @Test
@@ -114,7 +114,29 @@ public class GraphConfigurationControllerIT extends AbstractRestApiIT {
 
         // Then
         checkResponse(response, 200);
-        assertEquals(null, response.getBody());
+        assertThat(response.getBody()).isNull();
+    }
+
+    @Test
+    public void shouldReturn200WhenReturningGraphId() {
+        // Given
+        Graph emptyGraph = new Graph.Builder()
+                .config(new GraphConfig.Builder()
+                        .graphId("id")
+                        .description("test description")
+                        .build())
+                .storeProperties(new MapStoreProperties())
+                .addSchema(new Schema())
+                .build();
+
+        when(graphFactory.getGraph()).thenReturn(emptyGraph);
+
+        // When
+        ResponseEntity<String> response = get("/graph/config/graphId", String.class);
+
+        // Then
+        checkResponse(response, 200);
+        assertThat(response.getBody()).isEqualTo("id");
     }
 
     @Test
@@ -219,7 +241,7 @@ public class GraphConfigurationControllerIT extends AbstractRestApiIT {
 
         // Then
         checkResponse(response, 200);
-        assertEquals(MapStore.TRAITS, responseTraits);
+        assertThat(responseTraits).isEqualTo(MapStore.TRAITS);
     }
 
     @Test
@@ -240,7 +262,7 @@ public class GraphConfigurationControllerIT extends AbstractRestApiIT {
 
         // Then
         checkResponse(response, 500);
-        assertEquals("Could not find input class: a.random.thing", response.getBody().getSimpleMessage());
+        assertThat(response.getBody().getSimpleMessage()).isEqualTo("Could not find input class: a.random.thing");
     }
 
     @Test
@@ -261,7 +283,7 @@ public class GraphConfigurationControllerIT extends AbstractRestApiIT {
 
         // Then
         checkResponse(response, 500);
-        assertEquals("Could not find input class: a.random.class", response.getBody().getSimpleMessage());
+        assertThat(response.getBody().getSimpleMessage()).isEqualTo("Could not find input class: a.random.class");
     }
 
     @Test
@@ -282,7 +304,7 @@ public class GraphConfigurationControllerIT extends AbstractRestApiIT {
 
         // Then
         checkResponse(response, 500);
-        assertEquals("Class name was not recognised: a.random.class", response.getBody().getSimpleMessage());
+        assertThat(response.getBody().getSimpleMessage()).isEqualTo("Class name was not recognised: a.random.class");
     }
 
 }
