@@ -210,7 +210,7 @@ public class BugHuntTest {
         Assert.assertEquals(EXPECTED, new String(JSONSerialiser.serialise(list.get(0), true)));
 
     }
-    
+
     @Test
     public void testGetAllElementsWithViewFromAccumulo() throws Exception {
         AccumuloStore store = getAccumuloStore();
