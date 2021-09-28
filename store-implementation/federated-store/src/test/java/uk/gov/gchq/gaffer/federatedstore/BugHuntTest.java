@@ -375,7 +375,7 @@ public class BugHuntTest {
         return store;
     }
 
-    private Schema getSchema() throws StoreException {
+    private Schema getSchema() {
         return new Schema.Builder()
                 .edge(TEST_EDGE, new SchemaEdgeDefinition.Builder()
                         .source(TSTV)
