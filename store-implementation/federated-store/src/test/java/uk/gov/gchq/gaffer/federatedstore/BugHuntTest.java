@@ -187,8 +187,7 @@ public class BugHuntTest {
                 .build(), CONTEXT);
 
         Assert.assertNotNull(results);
-        // java.lang.ClassCastException: uk.gov.gchq.gaffer.data.element.Edge cannot be cast to uk.gov.gchq.gaffer.operation.data.EdgeSeed
-        // MapStore with Edge instead of EdgeSeed
+        // Fixed by gh-2508
         Assert.assertTrue(results.iterator().hasNext());
 
         final List list = Streams.toStream(results).collect(Collectors.toList());
