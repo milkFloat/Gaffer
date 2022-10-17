@@ -600,62 +600,62 @@ Resources:
                 if 'Output' in file:
                     outputs[file['Output']] = file['Key']
 
-        return outputs
+          return outputs
 
-        def cleanup_files(bucket):
-            # Delete EMR logs
-            continueDeletion = True
-            while continueDeletion:
-                continueDeletion = False
+          def cleanup_files(bucket):
+              # Delete EMR logs
+              continueDeletion = True
+              while continueDeletion:
+                  continueDeletion = False
 
-                logListing = s3.list_objects_v2(
-                    Bucket=bucket,
-                    Prefix='emr-logs/'
-                )
+                  logListing = s3.list_objects_v2(
+                      Bucket=bucket,
+                      Prefix='emr-logs/'
+                  )
 
-                if 'IsTruncated' in logListing:
-                    continueDeletion = logListing['IsTruncated']
+                  if 'IsTruncated' in logListing:
+                      continueDeletion = logListing['IsTruncated']
 
-                logFiles = []
-                if 'Contents' in logListing:
-                    for log in logListing['Contents']:
-                        logFiles.append({'Key': log['Key'] })
+                  logFiles = []
+                  if 'Contents' in logListing:
+                      for log in logListing['Contents']:
+                          logFiles.append({'Key': log['Key'] })
 
-                if len(logFiles) > 0:
-                    s3.delete_objects(
-                        Bucket=bucket,
-                        Delete={
-                            'Objects': logFiles
-                        }
-                    )
+                  if len(logFiles) > 0:
+                      s3.delete_objects(
+                          Bucket=bucket,
+                          Delete={
+                              'Objects': logFiles
+                          }
+                      )
 
-            # Delete uploaded files
-            for file in files:
-                s3.delete_object(
-                    Bucket=bucket,
-                    Key=file['Key']
-                )
+              # Delete uploaded files
+              for file in files:
+                  s3.delete_object(
+                      Bucket=bucket,
+                      Key=file['Key']
+                  )
 
-        def lambda_handler(evt, cntx):
-            try:
-                print(evt)
+          def lambda_handler(evt, cntx):
+              try:
+                  print(evt)
 
-                bucket = evt['ResourceProperties']['BucketName']
-                print('S3 Bucket: ' + bucket)
+                  bucket = evt['ResourceProperties']['BucketName']
+                  print('S3 Bucket: ' + bucket)
 
-                requestType = evt['RequestType']
-                if requestType == 'Create' or requestType == 'Update':
-                    outputs = upload_files(bucket)
-                    cfnresponse.send(evt, cntx, cfnresponse.SUCCESS, outputs)
-                elif requestType == 'Delete':
-                    cleanup_files(bucket)
-                    cfnresponse.send(evt, cntx, cfnresponse.SUCCESS, {})
-                else:
-                    raise Exception('Unrecognised RequestType: ' + requestType)
+                  requestType = evt['RequestType']
+                  if requestType == 'Create' or requestType == 'Update':
+                      outputs = upload_files(bucket)
+                      cfnresponse.send(evt, cntx, cfnresponse.SUCCESS, outputs)
+                  elif requestType == 'Delete':
+                      cleanup_files(bucket)
+                      cfnresponse.send(evt, cntx, cfnresponse.SUCCESS, {})
+                  else:
+                      raise Exception('Unrecognised RequestType: ' + requestType)
 
-            except Exception as e:
-                cfnresponse.send(evt, cntx, cfnresponse.FAILED, {'Error': str(e) })
-                raise
+              except Exception as e:
+                  cfnresponse.send(evt, cntx, cfnresponse.FAILED, {'Error': str(e) })
+                  raise
 
 
   FileUploadRole:
