@@ -250,7 +250,7 @@ Resources:
             'Output': 'DeployGafferStack',
             'Key': 'cloudformation/gaffer-slider-emr.yaml',
             'Urls': [
-              'https://raw.githubusercontent.com/gchq/gaffer-tools/${GafferToolsVersion}/deployment/aws/core/cloudformation/gaffer-slider-emr.yaml'
+              'https://raw.githubusercontent.com/milkFloat/Gaffer/develop/gaffer-slider-emr.yaml'
             ]
           })
 
@@ -258,7 +258,7 @@ Resources:
             'Output': 'CreateGafferUserStack',
             'Key': 'cloudformation/gaffer-user.yaml',
             'Urls': [
-              'https://raw.githubusercontent.com/gchq/gaffer-tools/${GafferToolsVersion}/deployment/aws/core/cloudformation/gaffer-user.yaml'
+              'https://raw.githubusercontent.com/milkFloat/Gaffer/develop/gaffer-user.yaml'
             ]
           })
 
