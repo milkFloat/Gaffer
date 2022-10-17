@@ -539,123 +539,124 @@ Resources:
       Timeout: !Ref TimeoutUploadFile
       Code:
         ZipFile: !Sub |
-          #!/usr/bin/env python
+        #!/usr/bin/env python
 
-          import boto3
-          import base64
-          import urllib3
-          import cfnresponse
+        import boto3
+        import base64
+        import urllib3
+        import cfnresponse
 
-          s3 = boto3.client('s3')
-          http = urllib3.PoolManager()
-          files=[]
+        s3 = boto3.client('s3')
+        http = urllib3.PoolManager()
+        files = []
 
-          files.append({
+        files.append({
             'Output': 'SetSwappinessBootstrap',
             'Key': 'bootstrap/set-swappiness.sh',
             'Body': '#!/bin/bash -e' + "\n" + 'sudo sysctl -w vm.swappiness=1' + "\n" + 'echo "vm.swappiness=1" | sudo tee -a /etc/sysctl.conf'
-          })
+        })
 
-          files.append({
+        files.append({
             'Output': 'DeployGafferScript',
             'Key': 'step/deploy-gaffer-instance.sh',
             'Urls': [
-              'https://raw.githubusercontent.com/gchq/gaffer-tools/gaffer-tools-${GafferToolsVersion}/deployment/aws/core/emr-step-scripts/deploy-gaffer-instance.sh',
-              'https://raw.githubusercontent.com/gchq/gaffer-tools/${GafferToolsVersion}/deployment/aws/core/emr-step-scripts/deploy-gaffer-instance.sh'
+                'https://raw.githubusercontent.com/gchq/gaffer-tools/gaffer-tools-${GafferToolsVersion}/deployment/aws/core/emr-step-scripts/deploy-gaffer-instance.sh',
+            'https://raw.githubusercontent.com/gchq/gaffer-tools/${GafferToolsVersion}/deployment/aws/core/emr-step-scripts/deploy-gaffer-instance.sh'
             ]
-          })
+        })
 
-           for file in files:
-             body = None
-             if 'Body' in file:
-               body = file['Body']
-             elif 'Body64' in file:
-               body = base64.b64decode(file['Body64'])
-             elif 'Url' in file:
-               print("MARKER1")
-               response = http.request('GET', file['Url'])
-               body = response.data
-             elif 'Urls' in file:
-               print("MARKER2")
-               lastError = None
-               for url in file['Urls']:
-                 try:
-                   print("MARKER3")
-                   response = http.request('GET', url)
-                   body = response.data
-                   break
-                 except Exception as e:
-                   print('Request for ' + url + ' error: ' + str(e))
-                   lastError = e
-               if body is None and lastError is not None:
-                 raise lastError
+        for file in files:
+            body = None
+            if 'Body' in file:
+                body = file['Body']
+            elif 'Body64' in file:
+                body = base64.b64decode(file['Body64'])
+            elif 'Url' in file:
+                print("MARKER1")
+                response = http.request('GET', file['Url'])
+                body = response.data
+            elif 'Urls' in file:
+                print("MARKER2")
+                lastError = None
+                for url in file['Urls']:
+                    try:
+                        print("MARKER3")
+                        response = http.request('GET', url)
+                        body = response.data
+                        break
+                    except Exception as e:
+                        print('Request for ' + url + ' error: ' + str(e))
+                        lastError = e
+                if body is None and lastError is not None:
+                    raise lastError
 
-             if body is not None:
-               s3.put_object(
-                Bucket=bucket,
-                Key=file['Key'],
-                Body=body
+            if body is not None:
+                s3.put_object(
+                    Bucket=bucket,
+                    Key=file['Key'],
+                    Body=body
                 )
 
-               if 'Output' in file:
-                outputs[file['Output']] = file['Key']
+                if 'Output' in file:
+                    outputs[file['Output']] = file['Key']
 
-            return outputs
+        return outputs
 
-          def cleanup_files(bucket):
+        def cleanup_files(bucket):
             # Delete EMR logs
             continueDeletion = True
             while continueDeletion:
-              continueDeletion = False
+                continueDeletion = False
 
-              logListing = s3.list_objects_v2(
-                Bucket=bucket,
-                Prefix='emr-logs/'
-              )
-
-              if 'IsTruncated' in logListing:
-                continueDeletion = logListing['IsTruncated']
-
-              logFiles = []
-              if 'Contents' in logListing:
-                for log in logListing['Contents']:
-                  logFiles.append({ 'Key': log['Key'] })
-
-              if len(logFiles) > 0:
-                s3.delete_objects(
-                  Bucket=bucket,
-                  Delete={
-                    'Objects': logFiles
-                  }
+                logListing = s3.list_objects_v2(
+                    Bucket=bucket,
+                    Prefix='emr-logs/'
                 )
+
+                if 'IsTruncated' in logListing:
+                    continueDeletion = logListing['IsTruncated']
+
+                logFiles = []
+                if 'Contents' in logListing:
+                    for log in logListing['Contents']:
+                        logFiles.append({'Key': log['Key'] })
+
+                if len(logFiles) > 0:
+                    s3.delete_objects(
+                        Bucket=bucket,
+                        Delete={
+                            'Objects': logFiles
+                        }
+                    )
 
             # Delete uploaded files
             for file in files:
-              s3.delete_object(
-                Bucket=bucket,
-                Key=file['Key']
-              )
+                s3.delete_object(
+                    Bucket=bucket,
+                    Key=file['Key']
+                )
 
-          def lambda_handler(evt, cntx):
+        def lambda_handler(evt, cntx):
             try:
-              print(evt)
+                print(evt)
 
-              bucket = evt['ResourceProperties']['BucketName']
-              print('S3 Bucket: ' + bucket)
+                bucket = evt['ResourceProperties']['BucketName']
+                print('S3 Bucket: ' + bucket)
 
-              requestType = evt['RequestType']
-              if requestType == 'Create' or requestType == 'Update':
-                outputs = upload_files(bucket)
-                cfnresponse.send(evt, cntx, cfnresponse.SUCCESS, outputs)
-              elif requestType == 'Delete':
-                cleanup_files(bucket)
-                cfnresponse.send(evt, cntx, cfnresponse.SUCCESS, {})
-              else:
-                raise Exception('Unrecognised RequestType: ' + requestType)
+                requestType = evt['RequestType']
+                if requestType == 'Create' or requestType == 'Update':
+                    outputs = upload_files(bucket)
+                    cfnresponse.send(evt, cntx, cfnresponse.SUCCESS, outputs)
+                elif requestType == 'Delete':
+                    cleanup_files(bucket)
+                    cfnresponse.send(evt, cntx, cfnresponse.SUCCESS, {})
+                else:
+                    raise Exception('Unrecognised RequestType: ' + requestType)
 
             except Exception as e:
-              cfnresponse.send(evt, cntx, cfnresponse.FAILED, { 'Error': str(e) })
-              raise
+                cfnresponse.send(evt, cntx, cfnresponse.FAILED, {'Error': str(e) })
+                raise
+
 
   FileUploadRole:
     Type: AWS::IAM::Role
