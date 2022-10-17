@@ -564,43 +564,44 @@ Resources:
               'https://raw.githubusercontent.com/gchq/gaffer-tools/${GafferToolsVersion}/deployment/aws/core/emr-step-scripts/deploy-gaffer-instance.sh'
               ]
           })
+          def upload_files(bucket):
+              outputs = {}
+              for file in files:
+                  body = None
+                  if 'Body' in file:
+                      body = file['Body']
+                  elif 'Body64' in file:
+                      body = base64.b64decode(file['Body64'])
+                  elif 'Url' in file:
+                      print("MARKER1")
+                      response = http.request('GET', file['Url'])
+                      body = response.data
+                  elif 'Urls' in file:
+                      print("MARKER2")
+                      lastError = None
+                      for url in file['Urls']:
+                          try:
+                              print("MARKER3")
+                              response = http.request('GET', url)
+                              body = response.data
+                              break
+                          except Exception as e:
+                              print('Request for ' + url + ' error: ' + str(e))
+                              lastError = e
+                      if body is None and lastError is not None:
+                          raise lastError
 
-          for file in files:
-              body = None
-              if 'Body' in file:
-                  body = file['Body']
-              elif 'Body64' in file:
-                  body = base64.b64decode(file['Body64'])
-              elif 'Url' in file:
-                  print("MARKER1")
-                  response = http.request('GET', file['Url'])
-                  body = response.data
-              elif 'Urls' in file:
-                  print("MARKER2")
-                  lastError = None
-                  for url in file['Urls']:
-                      try:
-                          print("MARKER3")
-                          response = http.request('GET', url)
-                          body = response.data
-                          break
-                      except Exception as e:
-                          print('Request for ' + url + ' error: ' + str(e))
-                          lastError = e
-                  if body is None and lastError is not None:
-                      raise lastError
+              if body is not None:
+                  s3.put_object(
+                      Bucket=bucket,
+                      Key=file['Key'],
+                      Body=body
+                      )
 
-          if body is not None:
-              s3.put_object(
-                  Bucket=bucket,
-                  Key=file['Key'],
-                  Body=body
-                  )
+                  if 'Output' in file:
+                      outputs[file['Output']] = file['Key']
 
-              if 'Output' in file:
-                  outputs[file['Output']] = file['Key']
-
-          return outputs
+              return outputs
 
           def cleanup_files(bucket):
               # Delete EMR logs
