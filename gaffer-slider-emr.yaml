@@ -539,56 +539,56 @@ Resources:
       Timeout: !Ref TimeoutUploadFile
       Code:
         ZipFile: !Sub |
-        #!/usr/bin/env python
+          #!/usr/bin/env python
 
-        import boto3
-        import base64
-        import urllib3
-        import cfnresponse
+          import boto3
+          import base64
+          import urllib3
+          import cfnresponse
 
-        s3 = boto3.client('s3')
-        http = urllib3.PoolManager()
-        files = []
+          s3 = boto3.client('s3')
+          http = urllib3.PoolManager()
+          files = []
 
-        files.append({
-            'Output': 'SetSwappinessBootstrap',
-            'Key': 'bootstrap/set-swappiness.sh',
-            'Body': '#!/bin/bash -e' + "\n" + 'sudo sysctl -w vm.swappiness=1' + "\n" + 'echo "vm.swappiness=1" | sudo tee -a /etc/sysctl.conf'
-        })
+          files.append({
+              'Output': 'SetSwappinessBootstrap',
+              'Key': 'bootstrap/set-swappiness.sh',
+              'Body': '#!/bin/bash -e' + "\n" + 'sudo sysctl -w vm.swappiness=1' + "\n" + 'echo "vm.swappiness=1" | sudo tee -a /etc/sysctl.conf'
+          })
 
-        files.append({
-            'Output': 'DeployGafferScript',
-            'Key': 'step/deploy-gaffer-instance.sh',
-            'Urls': [
-                'https://raw.githubusercontent.com/gchq/gaffer-tools/gaffer-tools-${GafferToolsVersion}/deployment/aws/core/emr-step-scripts/deploy-gaffer-instance.sh',
-            'https://raw.githubusercontent.com/gchq/gaffer-tools/${GafferToolsVersion}/deployment/aws/core/emr-step-scripts/deploy-gaffer-instance.sh'
-            ]
-        })
+          files.append({
+              'Output': 'DeployGafferScript',
+              'Key': 'step/deploy-gaffer-instance.sh',
+              'Urls': [
+                  'https://raw.githubusercontent.com/gchq/gaffer-tools/gaffer-tools-${GafferToolsVersion}/deployment/aws/core/emr-step-scripts/deploy-gaffer-instance.sh',
+              'https://raw.githubusercontent.com/gchq/gaffer-tools/${GafferToolsVersion}/deployment/aws/core/emr-step-scripts/deploy-gaffer-instance.sh'
+              ]
+          })
 
-        for file in files:
-            body = None
-            if 'Body' in file:
-                body = file['Body']
-            elif 'Body64' in file:
-                body = base64.b64decode(file['Body64'])
-            elif 'Url' in file:
-                print("MARKER1")
-                response = http.request('GET', file['Url'])
-                body = response.data
-            elif 'Urls' in file:
-                print("MARKER2")
-                lastError = None
-                for url in file['Urls']:
-                    try:
-                        print("MARKER3")
-                        response = http.request('GET', url)
-                        body = response.data
-                        break
-                    except Exception as e:
-                        print('Request for ' + url + ' error: ' + str(e))
-                        lastError = e
-                if body is None and lastError is not None:
-                    raise lastError
+          for file in files:
+              body = None
+              if 'Body' in file:
+                  body = file['Body']
+              elif 'Body64' in file:
+                  body = base64.b64decode(file['Body64'])
+              elif 'Url' in file:
+                  print("MARKER1")
+                  response = http.request('GET', file['Url'])
+                  body = response.data
+              elif 'Urls' in file:
+                  print("MARKER2")
+                  lastError = None
+                  for url in file['Urls']:
+                      try:
+                          print("MARKER3")
+                          response = http.request('GET', url)
+                          body = response.data
+                          break
+                      except Exception as e:
+                          print('Request for ' + url + ' error: ' + str(e))
+                          lastError = e
+                  if body is None and lastError is not None:
+                      raise lastError
 
             if body is not None:
                 s3.put_object(
