@@ -519,7 +519,7 @@ Resources:
 
   S3Bucket:
     Type: AWS::S3::Bucket
-    DeletionPolicy: Delete
+    DeletionPolicy: Retain
 
   FileUploadCustomResource:
     Type: AWS::CloudFormation::CustomResource
