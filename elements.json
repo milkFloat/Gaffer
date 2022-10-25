@@ -1,0 +1,9 @@
+{
+  "edges": {
+    "NationalityInDepartment": {
+      "description": "Nationality of a person in a department",
+      "source": "nationality",
+      "destination": "department"
+    }
+  }
+}
